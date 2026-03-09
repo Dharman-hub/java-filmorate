@@ -20,6 +20,7 @@ public class UserController {
 
     @GetMapping
     public Collection<User> findAll() {
+        log.info("Получен список всех пользователей");
         return users.values();
     }
 
@@ -27,10 +28,7 @@ public class UserController {
     public User create(@RequestBody User user) {
         validateUser(user);
 
-        if (user.getName() == null || user.getName().isBlank()) {
-            log.info("Ошибка создания пользователя: пустое имя");
-            user.setName(user.getLogin());
-        }
+        setDefaultUserName(user);
 
         user.setId(getNextId());
         users.put(user.getId(), user);
@@ -53,10 +51,7 @@ public class UserController {
         }
 
         validateUser(newUser);
-
-        if (newUser.getName() == null || newUser.getName().isBlank()) {
-            newUser.setName(newUser.getLogin());
-        }
+        setDefaultUserName(newUser);
 
         User oldUser = users.get(newUser.getId());
         oldUser.setEmail(newUser.getEmail());
@@ -90,7 +85,12 @@ public class UserController {
             throw new ValidationException("Login не должен содержать пробелы");
         }
 
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
+        if (user.getBirthday() == null) {
+            log.warn("Валидация не пройдена:birthday пустой");
+            throw new ValidationException("Дата рождения не может быть пустой");
+        }
+
+        if (user.getBirthday().isAfter(LocalDate.now())) {
             log.warn("Валидация не пройдена: birthday в будущем");
             throw new ValidationException("Дата рождения не может быть в будущем");
         }
@@ -103,5 +103,12 @@ public class UserController {
                 .max()
                 .orElse(0);
         return ++currentMaxId;
+    }
+
+    private void setDefaultUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            log.info("Ошибка создания пользователя: пустое имя");
+            user.setName(user.getLogin());
+        }
     }
 }

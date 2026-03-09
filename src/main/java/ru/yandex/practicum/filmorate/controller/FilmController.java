@@ -22,17 +22,13 @@ public class FilmController {
 
     @GetMapping
     public Collection<Film> findAll() {
+        log.info("Получен список всех фильмов");
         return films.values();
     }
 
     @PostMapping
     public Film create(@RequestBody Film film) {
         validateFilm(film);
-
-        if (film.getDescription() == null || film.getDescription().isBlank()) {
-            log.warn("Ошибка создания фильма: пустое описание");
-            throw new ValidationException("Описание не может быть пустым");
-        }
 
         film.setId(getNextId());
         films.put(film.getId(), film);
