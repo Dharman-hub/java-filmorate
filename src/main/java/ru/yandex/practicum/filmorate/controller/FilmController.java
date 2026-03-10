@@ -46,8 +46,7 @@ public class FilmController {
     @PutMapping
     public Film update(@RequestBody Film film) {
         if (film.getId() == null) {
-            log.warn("Ошибка обновления фильма: не указан id");
-            throw new NotFoundException("id не может быть пустым");
+            throw new ValidationException("Id фильма должен быть указан");
         }
 
         if (filmStorage.findById(film.getId()) == null) {
