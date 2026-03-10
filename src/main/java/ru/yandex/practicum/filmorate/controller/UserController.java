@@ -1,42 +1,46 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.user.UserService;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
 
-    private final Map<Long, User> users = new HashMap<>();
+    private final UserStorage userStorage;
+    private final UserService userService;
+
+    @Autowired
+    public UserController(UserStorage userStorage, UserService userService) {
+        this.userStorage = userStorage;
+        this.userService = userService;
+    }
 
     @GetMapping
     public Collection<User> findAll() {
         log.info("Получен список всех пользователей");
-        return users.values();
+        return userStorage.findAll();
     }
 
     @PostMapping
     public User create(@RequestBody User user) {
         validateUser(user);
-
         setDefaultUserName(user);
-
-        user.setId(getNextId());
-        users.put(user.getId(), user);
-
-        log.info("Создан пользователь с id  {}", user.getId());
-        return user;
+        User createdUser = userStorage.create(user);
+        log.info("Создан пользователь с id {}", createdUser.getId());
+        return createdUser;
     }
-
 
     @PutMapping
     public User update(@RequestBody User newUser) {
@@ -45,26 +49,54 @@ public class UserController {
             throw new ValidationException("Id должен быть указан");
         }
 
-        if (!users.containsKey(newUser.getId())) {
-            log.warn("Пользователь с id  {} не найден", newUser.getId());
+        if (userStorage.findById(newUser.getId()) == null) {
+            log.warn("Пользователь с id {} не найден", newUser.getId());
             throw new NotFoundException("Пользователь с id " + newUser.getId() + " не найден");
         }
 
         validateUser(newUser);
         setDefaultUserName(newUser);
 
-        User oldUser = users.get(newUser.getId());
-        oldUser.setEmail(newUser.getEmail());
-        oldUser.setLogin(newUser.getLogin());
-        oldUser.setName(newUser.getName());
-        oldUser.setBirthday(newUser.getBirthday());
-
-        log.info("Обновлён пользователь с id {}", oldUser.getId());
-        return oldUser;
+        return userStorage.update(newUser);
     }
 
-    private static void validateUser(User user) {
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        userService.addFriend(id, friendId);
+        log.info("Пользователь {} добавил в друзья пользователя {}", id, friendId);
+    }
 
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void removeFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        userService.removeFriend(id, friendId);
+        log.info("Пользователь {} удалил из друзей пользователя {}", id, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> getFriends(@PathVariable Long id) {
+        log.info("Запрошен список друзей пользователя {}", id);
+        return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+        log.info("Запрошены общие друзья пользователей {} и {}", id, otherId);
+        return userService.getCommonFriends(id, otherId);
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable Long id) {
+        log.info("Запрошен пользователь с id {}", id);
+
+        User user = userStorage.findById(id);
+        if (user == null) {
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
+        }
+
+        return user;
+    }
+
+    private void validateUser(User user) {
         if (user.getEmail() == null || user.getEmail().isBlank()) {
             log.warn("Валидация не пройдена: email пустой");
             throw new ValidationException("Email не может быть пустым");
@@ -86,7 +118,7 @@ public class UserController {
         }
 
         if (user.getBirthday() == null) {
-            log.warn("Валидация не пройдена:birthday пустой");
+            log.warn("Валидация не пройдена: birthday пустой");
             throw new ValidationException("Дата рождения не может быть пустой");
         }
 
@@ -96,18 +128,8 @@ public class UserController {
         }
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
-    }
-
     private void setDefaultUserName(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
-            log.info("Ошибка создания пользователя: пустое имя");
             user.setName(user.getLogin());
         }
     }
