@@ -49,9 +49,9 @@ public class UserDbStorage implements UserStorage {
     public User create(User user) {
 
         String sql = """
-        INSERT INTO users (email, login, name, birthday)
-        VALUES (?, ?, ?, ?)
-        """;
+                INSERT INTO users (email, login, name, birthday)
+                VALUES (?, ?, ?, ?)
+                """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -77,10 +77,10 @@ public class UserDbStorage implements UserStorage {
     public User update(User user) {
 
         String sql = """
-        UPDATE users
-        SET email = ?, login = ?, name = ?, birthday = ?
-        WHERE id = ?
-        """;
+                UPDATE users
+                SET email = ?, login = ?, name = ?, birthday = ?
+                WHERE id = ?
+                """;
 
         jdbcTemplate.update(sql,
                 user.getEmail(),
@@ -127,11 +127,11 @@ public class UserDbStorage implements UserStorage {
         findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         String sql = """
-            SELECT u.*
-            FROM users u
-            JOIN friendships f ON u.id = f.friend_id
-            WHERE f.user_id = ?
-            """;
+                SELECT u.*
+                FROM users u
+                JOIN friendships f ON u.id = f.friend_id
+                WHERE f.user_id = ?
+                """;
 
         return jdbcTemplate.query(sql, this::mapRowToUser, userId);
     }
@@ -142,12 +142,12 @@ public class UserDbStorage implements UserStorage {
         findById(otherUserId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         String sql = """
-            SELECT u.*
-            FROM users u
-            JOIN friendships f1 ON u.id = f1.friend_id
-            JOIN friendships f2 ON u.id = f2.friend_id
-            WHERE f1.user_id = ? AND f2.user_id = ?
-            """;
+                SELECT u.*
+                FROM users u
+                JOIN friendships f1 ON u.id = f1.friend_id
+                JOIN friendships f2 ON u.id = f2.friend_id
+                WHERE f1.user_id = ? AND f2.user_id = ?
+                """;
 
         return jdbcTemplate.query(sql, this::mapRowToUser, userId, otherUserId);
     }

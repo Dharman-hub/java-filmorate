@@ -10,8 +10,6 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -72,8 +70,8 @@ public class UserService {
         return List.copyOf(userStorage.getCommonFriends(userId, otherId));
     }
 
-    private User getUserOrThrow(Long id) {
-        return userStorage.findById(id)
+    private void getUserOrThrow(Long id) {
+        userStorage.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Пользователь с id {} не найден", id);
                     return new NotFoundException("Пользователь с id " + id + " не найден");
