@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.film.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -20,25 +19,23 @@ public class FilmController {
 
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
 
-    private final FilmStorage filmStorage;
     private final FilmService filmService;
 
     @Autowired
-    public FilmController(FilmStorage filmStorage, FilmService filmService) {
-        this.filmStorage = filmStorage;
+    public FilmController(FilmService filmService) {
         this.filmService = filmService;
     }
 
     @GetMapping
     public Collection<Film> findAll() {
         log.info("Получен список всех фильмов");
-        return filmStorage.findAll();
+        return filmService.findAll();
     }
 
     @PostMapping
     public Film create(@RequestBody Film film) {
         validateFilm(film);
-        Film createdFilm = filmStorage.create(film);
+        Film createdFilm = filmService.create(film);
         log.info("Добавлен фильм c id {}", createdFilm.getId());
         return createdFilm;
     }
@@ -49,13 +46,13 @@ public class FilmController {
             throw new ValidationException("Id фильма должен быть указан");
         }
 
-        if (filmStorage.findById(film.getId()) == null) {
+        if (filmService.findById(film.getId()) == null) {
             log.warn("Ошибка обновления фильма: фильм с таким id не найден");
             throw new NotFoundException("Фильм с таким id не найден");
         }
 
         validateFilm(film);
-        return filmStorage.update(film);
+        return filmService.update(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
@@ -80,7 +77,7 @@ public class FilmController {
     public Film getFilmById(@PathVariable Long id) {
         log.info("Запрошен фильм с id {}", id);
 
-        Film film = filmStorage.findById(id);
+        Film film = filmService.findById(id);
         if (film == null) {
             throw new NotFoundException("Фильм с id " + id + " не найден");
         }

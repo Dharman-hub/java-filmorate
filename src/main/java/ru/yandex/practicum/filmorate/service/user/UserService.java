@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,6 +19,27 @@ public class UserService {
 
     public UserService(UserStorage userStorage) {
         this.userStorage = userStorage;
+    }
+
+    public Collection<User> findAll() {
+        log.info("Запрос на получение списка всех пользователей");
+        return userStorage.findAll();
+    }
+
+    public User create(User user) {
+        log.info("Создание пользователя {}", user);
+        return userStorage.create(user);
+    }
+
+    public User update(User user) {
+        log.info("Обновление пользователя {}", user);
+        return userStorage.update(user);
+    }
+
+    public User findById(Long id) {
+        log.info("Запрос пользователя с id {}", id);
+        return userStorage.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
     }
 
     public void addFriend(Long userId, Long friendId) {
@@ -65,11 +87,10 @@ public class UserService {
     }
 
     private User getUserOrThrow(Long id) {
-        User user = userStorage.findById(id);
-        if (user == null) {
-            log.warn("Пользователь с id {} не найден", id);
-            throw new NotFoundException("Пользователь с id " + id + " не найден");
-        }
-        return user;
+        return userStorage.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Пользователь с id {} не найден", id);
+                    return new NotFoundException("Пользователь с id " + id + " не найден");
+                });
     }
 }

@@ -1,13 +1,12 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.user.UserService;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -16,28 +15,23 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    private final UserStorage userStorage;
-    private final UserService userService;
 
-    @Autowired
-    public UserController(UserStorage userStorage, UserService userService) {
-        this.userStorage = userStorage;
-        this.userService = userService;
-    }
+    private final UserService userService;
 
     @GetMapping
     public Collection<User> findAll() {
         log.info("Получен список всех пользователей");
-        return userStorage.findAll();
+        return userService.findAll();
     }
 
     @PostMapping
     public User create(@RequestBody User user) {
         validateUser(user);
         setDefaultUserName(user);
-        User createdUser = userStorage.create(user);
+        User createdUser = userService.create(user);
         log.info("Создан пользователь с id {}", createdUser.getId());
         return createdUser;
     }
@@ -49,7 +43,7 @@ public class UserController {
             throw new ValidationException("Id должен быть указан");
         }
 
-        if (userStorage.findById(newUser.getId()) == null) {
+        if (userService.findById(newUser.getId()) == null) {
             log.warn("Пользователь с id {} не найден", newUser.getId());
             throw new NotFoundException("Пользователь с id " + newUser.getId() + " не найден");
         }
@@ -57,7 +51,7 @@ public class UserController {
         validateUser(newUser);
         setDefaultUserName(newUser);
 
-        return userStorage.update(newUser);
+        return userService.update(newUser);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -88,7 +82,7 @@ public class UserController {
     public User getUserById(@PathVariable Long id) {
         log.info("Запрошен пользователь с id {}", id);
 
-        User user = userStorage.findById(id);
+        User user = userService.findById(id);
         if (user == null) {
             throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
