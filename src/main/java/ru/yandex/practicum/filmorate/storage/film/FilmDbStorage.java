@@ -2,10 +2,12 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
@@ -89,32 +91,31 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film create(Film film) {
-
-        String sql = """
+        try {
+            String sql = """
                 INSERT INTO films (name, description, release_date, duration, mpa_id)
                 VALUES (?, ?, ?, ?, ?)
                 """;
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+            KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        jdbcTemplate.update(connection -> {
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+                ps.setString(1, film.getName());
+                ps.setString(2, film.getDescription());
+                ps.setDate(3, Date.valueOf(film.getReleaseDate()));
+                ps.setInt(4, film.getDuration());
+                ps.setInt(5, film.getMpa().getId());
+                return ps;
+            }, keyHolder);
 
-            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            film.setId(keyHolder.getKey().longValue());
+            saveGenres(film);
 
-            ps.setString(1, film.getName());
-            ps.setString(2, film.getDescription());
-            ps.setDate(3, Date.valueOf(film.getReleaseDate()));
-            ps.setInt(4, film.getDuration());
-            ps.setInt(5, film.getMpa().getId());
-
-            return ps;
-
-        }, keyHolder);
-
-        film.setId(keyHolder.getKey().longValue());
-        saveGenres(film);
-
-        return findById(film.getId()).orElseThrow();
+            return findById(film.getId()).orElseThrow();
+        } catch (DataIntegrityViolationException e) {
+            throw new NotFoundException("Указан несуществующий рейтинг MPA или жанр");
+        }
     }
 
     @Override
