@@ -39,8 +39,7 @@ public class UserService {
 
     public User findById(Long id) {
         log.info("Запрос пользователя с id {}", id);
-        return userStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
+        return getUserOrThrow(id);
     }
 
     public void addFriend(Long userId, Long friendId) {
@@ -70,11 +69,8 @@ public class UserService {
         return List.copyOf(userStorage.getCommonFriends(userId, otherId));
     }
 
-    private void getUserOrThrow(Long id) {
-        userStorage.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Пользователь с id {} не найден", id);
-                    return new NotFoundException("Пользователь с id " + id + " не найден");
-                });
+    private User getUserOrThrow(Long id) {
+        return userStorage.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + id + " не найден"));
     }
 }

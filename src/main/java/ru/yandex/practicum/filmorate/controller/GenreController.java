@@ -3,9 +3,8 @@ package ru.yandex.practicum.filmorate.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.service.genre.GenreService;
 
 import java.util.Collection;
 
@@ -15,18 +14,17 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class GenreController {
 
-    private final GenreStorage genreStorage;
+    private final GenreService genreService;
 
     @GetMapping
     public Collection<Genre> findAll() {
         log.info("Запрошен список всех жанров");
-        return genreStorage.findAll();
+        return genreService.findAll();
     }
 
     @GetMapping("/{id}")
     public Genre findById(@PathVariable Integer id) {
         log.info("Запрошен жанр с id {}", id);
-        return genreStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Жанр с id " + id + " не найден"));
+        return genreService.findById(id);
     }
 }

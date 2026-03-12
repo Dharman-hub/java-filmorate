@@ -6,7 +6,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
@@ -106,25 +105,18 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Long userId, Long friendId) {
-        findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        findById(friendId).orElseThrow(() -> new NotFoundException("Друг не найден"));
-
         String sql = "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
     @Override
     public void removeFriend(Long userId, Long friendId) {
-        findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        findById(friendId).orElseThrow(() -> new NotFoundException("Друг не найден"));
-
         String sql = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
     @Override
     public Collection<User> getFriends(Long userId) {
-        findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         String sql = """
                 SELECT u.*
@@ -138,8 +130,6 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Collection<User> getCommonFriends(Long userId, Long otherUserId) {
-        findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        findById(otherUserId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         String sql = """
                 SELECT u.*
